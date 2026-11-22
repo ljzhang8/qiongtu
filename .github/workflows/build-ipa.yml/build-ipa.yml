@@ -1,0 +1,30 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build (unsigned)
+        run: |
+          xcodebuild -project XiuTu.xcodeproj -target XiuTu \
+            -configuration Release -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -derivedDataPath "$PWD/build" build
+      - name: Package IPA
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "App: $APP"
+          mkdir -p Payload
+          cp -r "$APP" Payload/
+          zip -qry Qiongtu-unsigned.ipa Payload
+          ls -lh Qiongtu-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Qiongtu-unsigned-ipa
+          path: Qiongtu-unsigned.ipa
